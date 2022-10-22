@@ -51,7 +51,7 @@
 %nonassoc ELSE
 %%
 //7.1.2 High-level Definitions
-Program: ExtDefList	{$$=createfather("Program",@1.first_line,1,$1);root=$$;if(error==0) print(root,0);}
+Program: ExtDefList	{$$=createfather("Program",@1.first_line,1,$1);root=$$;/*if(error==0) print(root,0);*/}
 	;
 ExtDefList: ExtDef ExtDefList {$$=createfather("ExtDefList",@1.first_line,2,$1,$2);}				
     | {$$=createfather("ExtDefList",0,0);}
