@@ -66,7 +66,7 @@
 
 
 /* First part of user prologue.  */
-#line 1 "syntax.y"
+#line 1 "./syntax.y"
 
 	//#define YYDEBUG 1
 	#define YYSTYPE struct TreeNode*
@@ -77,8 +77,9 @@
 	struct TreeNode* root;
 	struct TreeNode* createfather(char *name, int line,int num,...);
 	void print(struct TreeNode* node,int depth);
+	void yyerror(char* msg);
 
-#line 82 "syntax.tab.c"
+#line 83 "./syntax.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -115,7 +116,7 @@
 # define YY_YY_SYNTAX_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 1
+# define YYDEBUG 0
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -551,13 +552,13 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    54,    54,    56,    57,    59,    60,    61,    64,    65,
-      68,    69,    71,    72,    75,    76,    78,    81,    82,    85,
-      86,    89,    90,    92,    95,    98,    99,   101,   102,   103,
-     104,   105,   106,   107,   108,   111,   112,   114,   115,   117,
-     118,   120,   121,   124,   125,   126,   127,   128,   129,   130,
-     131,   132,   133,   134,   135,   136,   137,   138,   139,   140,
-     141,   144,   145
+       0,    55,    55,    57,    58,    60,    61,    62,    65,    66,
+      69,    70,    72,    73,    76,    77,    79,    82,    83,    86,
+      87,    90,    91,    93,    96,    99,   100,   102,   103,   104,
+     105,   106,   107,   108,   109,   112,   113,   115,   116,   118,
+     119,   121,   122,   125,   126,   127,   128,   129,   130,   131,
+     132,   133,   134,   135,   136,   137,   138,   139,   140,   141,
+     142,   145,   146
 };
 #endif
 
@@ -1542,367 +1543,367 @@ yyreduce:
   switch (yyn)
     {
   case 2:
-#line 54 "syntax.y"
-                        {yyval=createfather("Program",(yylsp[0]).first_line,1,yyvsp[0]);root=yyval;if(error==0) print(root,0);}
-#line 1548 "syntax.tab.c"
+#line 55 "./syntax.y"
+                        {yyval=createfather("Program",(yylsp[0]).first_line,1,yyvsp[0]);root=yyval;/*if(error==0) print(root,0);*/}
+#line 1549 "./syntax.tab.c"
     break;
 
   case 3:
-#line 56 "syntax.y"
+#line 57 "./syntax.y"
                               {yyval=createfather("ExtDefList",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1554 "syntax.tab.c"
+#line 1555 "./syntax.tab.c"
     break;
 
   case 4:
-#line 57 "syntax.y"
+#line 58 "./syntax.y"
       {yyval=createfather("ExtDefList",0,0);}
-#line 1560 "syntax.tab.c"
+#line 1561 "./syntax.tab.c"
     break;
 
   case 5:
-#line 59 "syntax.y"
+#line 60 "./syntax.y"
                                    {yyval=createfather("ExtDef",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1566 "syntax.tab.c"
+#line 1567 "./syntax.tab.c"
     break;
 
   case 6:
-#line 60 "syntax.y"
+#line 61 "./syntax.y"
                          {yyval=createfather("ExtDef",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1572 "syntax.tab.c"
+#line 1573 "./syntax.tab.c"
     break;
 
   case 7:
-#line 61 "syntax.y"
+#line 62 "./syntax.y"
                                   {yyval=createfather("ExtDef",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1578 "syntax.tab.c"
+#line 1579 "./syntax.tab.c"
     break;
 
   case 8:
-#line 64 "syntax.y"
+#line 65 "./syntax.y"
                     {yyval=createfather("ExtDecList",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1584 "syntax.tab.c"
+#line 1585 "./syntax.tab.c"
     break;
 
   case 9:
-#line 65 "syntax.y"
+#line 66 "./syntax.y"
                                   {yyval=createfather("ExtDecList",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1590 "syntax.tab.c"
+#line 1591 "./syntax.tab.c"
     break;
 
   case 10:
-#line 68 "syntax.y"
+#line 69 "./syntax.y"
                  {yyval=createfather("Specifier",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1596 "syntax.tab.c"
+#line 1597 "./syntax.tab.c"
     break;
 
   case 11:
-#line 69 "syntax.y"
+#line 70 "./syntax.y"
                           {yyval=createfather("Specifier",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1602 "syntax.tab.c"
+#line 1603 "./syntax.tab.c"
     break;
 
   case 12:
-#line 71 "syntax.y"
+#line 72 "./syntax.y"
                                               {yyval=createfather("StructSpecifier",(yylsp[-4]).first_line,5,yyvsp[-4],yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1608 "syntax.tab.c"
+#line 1609 "./syntax.tab.c"
     break;
 
   case 13:
-#line 72 "syntax.y"
+#line 73 "./syntax.y"
                      {yyval=createfather("StructSpecifier",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1614 "syntax.tab.c"
+#line 1615 "./syntax.tab.c"
     break;
 
   case 14:
-#line 75 "syntax.y"
+#line 76 "./syntax.y"
             {yyval=createfather("OptTag",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1620 "syntax.tab.c"
+#line 1621 "./syntax.tab.c"
     break;
 
   case 15:
-#line 76 "syntax.y"
+#line 77 "./syntax.y"
           {yyval=createfather("OptTag",0,0);}
-#line 1626 "syntax.tab.c"
+#line 1627 "./syntax.tab.c"
     break;
 
   case 16:
-#line 78 "syntax.y"
+#line 79 "./syntax.y"
          {yyval=createfather("Tag",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1632 "syntax.tab.c"
+#line 1633 "./syntax.tab.c"
     break;
 
   case 17:
-#line 81 "syntax.y"
+#line 82 "./syntax.y"
             {yyval=createfather("VarDec",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1638 "syntax.tab.c"
+#line 1639 "./syntax.tab.c"
     break;
 
   case 18:
-#line 82 "syntax.y"
+#line 83 "./syntax.y"
                            {yyval=createfather("VarDec",(yylsp[-3]).first_line,4,yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1644 "syntax.tab.c"
+#line 1645 "./syntax.tab.c"
     break;
 
   case 19:
-#line 85 "syntax.y"
+#line 86 "./syntax.y"
                           {yyval=createfather("FunDec",(yylsp[-3]).first_line,4,yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1650 "syntax.tab.c"
+#line 1651 "./syntax.tab.c"
     break;
 
   case 20:
-#line 86 "syntax.y"
+#line 87 "./syntax.y"
                    {yyval=createfather("FunDec",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1656 "syntax.tab.c"
+#line 1657 "./syntax.tab.c"
     break;
 
   case 21:
-#line 89 "syntax.y"
+#line 90 "./syntax.y"
                                  {yyval=createfather("VarList",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1662 "syntax.tab.c"
+#line 1663 "./syntax.tab.c"
     break;
 
   case 22:
-#line 90 "syntax.y"
+#line 91 "./syntax.y"
                    {yyval=createfather("VarList",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1668 "syntax.tab.c"
+#line 1669 "./syntax.tab.c"
     break;
 
   case 23:
-#line 92 "syntax.y"
+#line 93 "./syntax.y"
                             {yyval=createfather("ParamDec",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1674 "syntax.tab.c"
+#line 1675 "./syntax.tab.c"
     break;
 
   case 24:
-#line 95 "syntax.y"
+#line 96 "./syntax.y"
                                 {yyval=createfather("CompSt",(yylsp[-3]).first_line,4,yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1680 "syntax.tab.c"
+#line 1681 "./syntax.tab.c"
     break;
 
   case 25:
-#line 98 "syntax.y"
+#line 99 "./syntax.y"
                          {yyval=createfather("StmtList",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1686 "syntax.tab.c"
+#line 1687 "./syntax.tab.c"
     break;
 
   case 26:
-#line 99 "syntax.y"
+#line 100 "./syntax.y"
           {yyval=createfather("StmtList",0,0);}
-#line 1692 "syntax.tab.c"
+#line 1693 "./syntax.tab.c"
     break;
 
   case 27:
-#line 101 "syntax.y"
+#line 102 "./syntax.y"
                 {yyval=createfather("Stmt",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1698 "syntax.tab.c"
+#line 1699 "./syntax.tab.c"
     break;
 
   case 28:
-#line 102 "syntax.y"
+#line 103 "./syntax.y"
                  {yyval=createfather("Stmt",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1704 "syntax.tab.c"
+#line 1705 "./syntax.tab.c"
     break;
 
   case 29:
-#line 103 "syntax.y"
+#line 104 "./syntax.y"
                           {yyval=createfather("Stmt",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1710 "syntax.tab.c"
+#line 1711 "./syntax.tab.c"
     break;
 
   case 30:
-#line 104 "syntax.y"
+#line 105 "./syntax.y"
                                                   {yyval=createfather("Stmt",(yylsp[-4]).first_line,5,yyvsp[-4],yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1716 "syntax.tab.c"
+#line 1717 "./syntax.tab.c"
     break;
 
   case 31:
-#line 105 "syntax.y"
+#line 106 "./syntax.y"
                                       {yyval=createfather("Stmt",(yylsp[-6]).first_line,7,yyvsp[-6],yyvsp[-5],yyvsp[-4],yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1722 "syntax.tab.c"
+#line 1723 "./syntax.tab.c"
     break;
 
   case 32:
-#line 106 "syntax.y"
+#line 107 "./syntax.y"
                                {yyval=createfather("Stmt",(yylsp[-4]).first_line,5,yyvsp[-4],yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1728 "syntax.tab.c"
+#line 1729 "./syntax.tab.c"
     break;
 
   case 33:
-#line 107 "syntax.y"
+#line 108 "./syntax.y"
                      {error+=1;}
-#line 1734 "syntax.tab.c"
+#line 1735 "./syntax.tab.c"
     break;
 
   case 35:
-#line 111 "syntax.y"
+#line 112 "./syntax.y"
                       {yyval=createfather("DefList",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1740 "syntax.tab.c"
+#line 1741 "./syntax.tab.c"
     break;
 
   case 36:
-#line 112 "syntax.y"
+#line 113 "./syntax.y"
           {yyval=createfather("DefList",0,0);}
-#line 1746 "syntax.tab.c"
+#line 1747 "./syntax.tab.c"
     break;
 
   case 37:
-#line 114 "syntax.y"
+#line 115 "./syntax.y"
                              {yyval=createfather("Def",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1752 "syntax.tab.c"
+#line 1753 "./syntax.tab.c"
     break;
 
   case 38:
-#line 115 "syntax.y"
+#line 116 "./syntax.y"
                                        {error+=1;}
-#line 1758 "syntax.tab.c"
+#line 1759 "./syntax.tab.c"
     break;
 
   case 39:
-#line 117 "syntax.y"
+#line 118 "./syntax.y"
               {yyval=createfather("DecList",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1764 "syntax.tab.c"
+#line 1765 "./syntax.tab.c"
     break;
 
   case 40:
-#line 118 "syntax.y"
+#line 119 "./syntax.y"
                             {yyval=createfather("DecList",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1770 "syntax.tab.c"
+#line 1771 "./syntax.tab.c"
     break;
 
   case 41:
-#line 120 "syntax.y"
+#line 121 "./syntax.y"
              {yyval=createfather("Dec",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1776 "syntax.tab.c"
+#line 1777 "./syntax.tab.c"
     break;
 
   case 42:
-#line 121 "syntax.y"
+#line 122 "./syntax.y"
                               {yyval=createfather("Dec",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1782 "syntax.tab.c"
+#line 1783 "./syntax.tab.c"
     break;
 
   case 43:
-#line 124 "syntax.y"
+#line 125 "./syntax.y"
                        {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1788 "syntax.tab.c"
+#line 1789 "./syntax.tab.c"
     break;
 
   case 44:
-#line 125 "syntax.y"
+#line 126 "./syntax.y"
                       {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1794 "syntax.tab.c"
+#line 1795 "./syntax.tab.c"
     break;
 
   case 45:
-#line 126 "syntax.y"
+#line 127 "./syntax.y"
                      {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1800 "syntax.tab.c"
+#line 1801 "./syntax.tab.c"
     break;
 
   case 46:
-#line 127 "syntax.y"
+#line 128 "./syntax.y"
                         {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1806 "syntax.tab.c"
+#line 1807 "./syntax.tab.c"
     break;
 
   case 47:
-#line 128 "syntax.y"
+#line 129 "./syntax.y"
                        {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1812 "syntax.tab.c"
+#line 1813 "./syntax.tab.c"
     break;
 
   case 48:
-#line 129 "syntax.y"
+#line 130 "./syntax.y"
                         {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1818 "syntax.tab.c"
+#line 1819 "./syntax.tab.c"
     break;
 
   case 49:
-#line 130 "syntax.y"
+#line 131 "./syntax.y"
                        {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1824 "syntax.tab.c"
+#line 1825 "./syntax.tab.c"
     break;
 
   case 50:
-#line 131 "syntax.y"
+#line 132 "./syntax.y"
                       {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1830 "syntax.tab.c"
+#line 1831 "./syntax.tab.c"
     break;
 
   case 51:
-#line 132 "syntax.y"
+#line 133 "./syntax.y"
                     {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1836 "syntax.tab.c"
+#line 1837 "./syntax.tab.c"
     break;
 
   case 52:
-#line 133 "syntax.y"
+#line 134 "./syntax.y"
                     {yyval=createfather("Exp",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1842 "syntax.tab.c"
+#line 1843 "./syntax.tab.c"
     break;
 
   case 53:
-#line 134 "syntax.y"
+#line 135 "./syntax.y"
                   {yyval=createfather("Exp",(yylsp[-1]).first_line,2,yyvsp[-1],yyvsp[0]);}
-#line 1848 "syntax.tab.c"
+#line 1849 "./syntax.tab.c"
     break;
 
   case 54:
-#line 135 "syntax.y"
+#line 136 "./syntax.y"
                         {yyval=createfather("Exp",(yylsp[-3]).first_line,4,yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1854 "syntax.tab.c"
+#line 1855 "./syntax.tab.c"
     break;
 
   case 55:
-#line 136 "syntax.y"
+#line 137 "./syntax.y"
                    {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1860 "syntax.tab.c"
+#line 1861 "./syntax.tab.c"
     break;
 
   case 56:
-#line 137 "syntax.y"
+#line 138 "./syntax.y"
                         {yyval=createfather("Exp",(yylsp[-3]).first_line,4,yyvsp[-3],yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1866 "syntax.tab.c"
+#line 1867 "./syntax.tab.c"
     break;
 
   case 57:
-#line 138 "syntax.y"
+#line 139 "./syntax.y"
                      {yyval=createfather("Exp",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1872 "syntax.tab.c"
+#line 1873 "./syntax.tab.c"
     break;
 
   case 58:
-#line 139 "syntax.y"
+#line 140 "./syntax.y"
              {yyval=createfather("Exp",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1878 "syntax.tab.c"
+#line 1879 "./syntax.tab.c"
     break;
 
   case 59:
-#line 140 "syntax.y"
+#line 141 "./syntax.y"
               {yyval=createfather("Exp",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1884 "syntax.tab.c"
+#line 1885 "./syntax.tab.c"
     break;
 
   case 60:
-#line 141 "syntax.y"
+#line 142 "./syntax.y"
                 {yyval=createfather("Exp",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1890 "syntax.tab.c"
+#line 1891 "./syntax.tab.c"
     break;
 
   case 61:
-#line 144 "syntax.y"
+#line 145 "./syntax.y"
                       {yyval=createfather("Args",(yylsp[-2]).first_line,3,yyvsp[-2],yyvsp[-1],yyvsp[0]);}
-#line 1896 "syntax.tab.c"
+#line 1897 "./syntax.tab.c"
     break;
 
   case 62:
-#line 145 "syntax.y"
+#line 146 "./syntax.y"
               {yyval=createfather("Args",(yylsp[0]).first_line,1,yyvsp[0]);}
-#line 1902 "syntax.tab.c"
+#line 1903 "./syntax.tab.c"
     break;
 
 
-#line 1906 "syntax.tab.c"
+#line 1907 "./syntax.tab.c"
 
       default: break;
     }
@@ -2140,7 +2141,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 147 "syntax.y"
+#line 148 "./syntax.y"
 
 
 struct TreeNode* createfather(char *name, int line,int num,...)
@@ -2161,7 +2162,7 @@ struct TreeNode* createfather(char *name, int line,int num,...)
 	return cur;
 }
 
-yyerror(char* msg) {
+void yyerror(char* msg) {
     fprintf(stderr, "Error type B at Line %d:%s\n",yylineno,msg);
 }
 

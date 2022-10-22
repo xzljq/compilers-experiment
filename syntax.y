@@ -8,6 +8,7 @@
 	struct TreeNode* root;
 	struct TreeNode* createfather(char *name, int line,int num,...);
 	void print(struct TreeNode* node,int depth);
+	void yyerror(char* msg);
 %}
 
 //tokens
@@ -164,7 +165,7 @@ struct TreeNode* createfather(char *name, int line,int num,...)
 	return cur;
 }
 
-yyerror(char* msg) {
+void yyerror(char* msg) {
     fprintf(stderr, "Error type B at Line %d:%s\n",yylineno,msg);
 }
 
