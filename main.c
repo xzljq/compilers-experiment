@@ -1,5 +1,9 @@
 #include<stdio.h>
 #include"syntax.tab.h"
+#include"senmatic.h"
+#include"TreeNode.h"
+
+extern struct TreeNode* root;
 
 int main(int argc, char** argv)
 { 
@@ -13,5 +17,7 @@ int main(int argc, char** argv)
 	yyrestart(f);
     //yydebug = 1;
 	yyparse();
+
+	senmatic_check(root);
 	return 0;
 }

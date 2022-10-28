@@ -1,6 +1,10 @@
 {
     "files.associations": {
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "typeinfo": "c",
+        "assert.h": "c",
+        "senmatic.h": "c",
+        "syntax.tab.h": "c"
     },
     "makefile.launchConfigurations": [
         {
