@@ -14,13 +14,15 @@
 #define INTT 0
 #define FLOATT 1
 
+#define DEFINED 1
+#define DECLARED 0
 
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
 //typedef struct Symbol Symbol;
 struct Type_
 {
-	enum { BASIC, ARRAY, STRUCTURE, FUNCTION} kind;
+	enum { BASIC, ARRAY, STRUCTURE, FUNCTION , STRUCTNAME} kind;
 	union
 	{
 		// 基本类型
@@ -30,7 +32,10 @@ struct Type_
 		// 结构体类型信息是一个链表
         FieldList structure;
 		// 对于函数至少要记录其返回类型、参数个数以及参数类型
-		struct { Type ret_type; int num; FieldList para_list;} function;
+		struct { Type ret_type; int num; FieldList para_list; int defined;/*0-only declared 1-have defined*/int line;} function;
+
+		//name of struct difinition
+		Type structname_type;
 	} u;
 };
 
@@ -52,7 +57,7 @@ struct Symbol
 	Type type;
 	struct Symbol* hash_next;
 	struct Symbol* stack_next;
-	//int stack_depth;
+	int stack_depth;
 };
 
 struct SymbolTable
@@ -62,10 +67,13 @@ struct SymbolTable
 	int curdepth;
 };
 
+// struct StructTable
+// {
+	
+// }
+
 struct Symbol* SymbolFind(struct SymbolTable* ST,char* name);
-
 void SymbolInsert(struct SymbolTable* ST,struct Symbol* s);
-
 void DeleteCurdepth(struct SymbolTable* ST);
 void PrintST(struct SymbolTable* ST);
 
@@ -82,7 +90,7 @@ void dec_struct(FieldList FL,Type t,struct TreeNode* root);
 //void vardec_struct(FieldList FL,Type t,struct TreeNode* root);
 void extdeclist(Type t,struct TreeNode* root);
 struct Symbol* vardec(Type t,struct TreeNode* root);
-struct Symbol* fundec(Type ret_t,struct TreeNode* root);
+struct Symbol* fundec(int define,Type ret_t,struct TreeNode* root);
 void varlist(Type t,struct TreeNode* root);
 void compst(struct Symbol* S,struct TreeNode* root);
 
@@ -96,4 +104,6 @@ Type expp(struct TreeNode* root);
 
 FieldList check_struct(FieldList t,char* name);
 int check_funpara(FieldList FL,struct TreeNode* root);//1-ok 0-not ok
+int check_func_equal(Type t1,Type t2);
+void check_only_declared_func(struct SymbolTable* ST);
 #endif

@@ -60,6 +60,7 @@ ExtDefList: ExtDef ExtDefList {$$=createfather("ExtDefList",@1.first_line,2,$1,$
 ExtDef : Specifier ExtDecList SEMI {$$=createfather("ExtDef",@1.first_line,3,$1,$2,$3);}
 	| Specifier SEMI {$$=createfather("ExtDef",@1.first_line,2,$1,$2);}
 	| Specifier FunDec CompSt {$$=createfather("ExtDef",@1.first_line,3,$1,$2,$3);}
+	| Specifier FunDec SEMI {$$=createfather("ExtDef",@1.first_line,3,$1,$2,$3);}
 	//| Specifier ExtDecList error SEMI {error+=1;}
 	;
 ExtDecList : VarDec {$$=createfather("ExtDecList",@1.first_line,1,$1);}

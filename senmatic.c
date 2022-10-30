@@ -54,15 +54,22 @@ int Type_equal(Type a,Type b)//1-true-equal 0-unequal
         }
         else
         {
-            printf("error:function in the left of =\n");
-            return 0;
+            return Type_equal(a->u.function.ret_type,b->u.function.ret_type);
         }
     }
     else
     {
-        if(b->kind==FUNCTION)
+        if(a->kind==FUNCTION && b->kind==FUNCTION)
+        {
+            return Type_equal(a->u.function.ret_type,b->u.function.ret_type);
+        }
+        else if(b->kind==FUNCTION)
         {
             return Type_equal(a,b->u.function.ret_type);
+        }
+        else if(a->kind==FUNCTION)
+        {
+            return Type_equal(a->u.function.ret_type,b);
         }
         else return 0;
     }
@@ -71,6 +78,7 @@ int Type_equal(Type a,Type b)//1-true-equal 0-unequal
 void DeleteCurdepth(struct SymbolTable* ST)
 {
     //printf("DeleteCurdepth:%d\n",ST->curdepth);
+    //PrintST(ST);
 	if(ST->curdepth>0)
 	{
 		struct Symbol* cur=ST->Stack[ST->curdepth],*next;
@@ -87,7 +95,7 @@ void DeleteCurdepth(struct SymbolTable* ST)
 	}
 	else
 	{
-		printf("DELETE ERROR");
+		printf("DELETE ERROR\n");
 	}
 }
 
@@ -99,8 +107,20 @@ void PrintST(struct SymbolTable* ST)
         struct Symbol* cur=ST->HashTable[i];
         while(cur!=NULL)
         {
-            printf("%s\n",cur->name);
+            printf("NAME:%s TYPE:%d ",cur->name,cur->type->kind);
+            if(cur->type->kind==FUNCTION)
+            {
+                printf("RET_TYPE:%d ",cur->type->u.function.ret_type->kind);
+                printf("PARA_TYPE:");
+                FieldList FL=cur->type->u.function.para_list;
+                while(FL!=NULL)
+                {
+                    printf("%d ",FL->type->kind);
+                    FL=FL->tail;
+                }
+            }
             cur=cur->hash_next;
+            printf("\n");
         }
     }
     printf("-----------------------------------\n");
@@ -116,6 +136,7 @@ void SymbolInsert(struct SymbolTable* ST,struct Symbol* s)
 	// else
 	// {
 		s->hash_next=ST->HashTable[hash_pjw(s->name)];
+        s->stack_depth=ST->curdepth;
 		ST->HashTable[hash_pjw(s->name)]=s;
 
 		s->stack_next=ST->Stack[ST->curdepth];
@@ -147,6 +168,7 @@ struct Symbol* SymbolFindCurDepth(struct SymbolTable* ST,char* name)
 void senmatic_check(struct TreeNode* root)
 {
     program(root);
+    check_only_declared_func(&ST);
 }
 
 void program(struct TreeNode* root)
@@ -177,21 +199,38 @@ void extdef(struct TreeNode* root)
     {
         //printf("ExtDef → Specifier SEMI\n");
     }
-    else //Specifier FunDec CompSt
+    else if(strcmp(root->childlist[2]->name,"CompSt")==0)//Specifier FunDec CompSt
     {
         //printf("ExtDef → Specifier FunDec CompSt\n");
         ST.curdepth++;
-        struct Symbol* S=fundec(t,root->childlist[1]);
+        struct Symbol* S=fundec(DEFINED,t,root->childlist[1]);
+        
         if(S==NULL) return;
+        //S->type->u.function.defined=DEFINED;
         compst(S,root->childlist[2]);
         //PrintST(&ST);
         DeleteCurdepth(&ST);
         
     }
+    else//Specifier FunDec SEMI
+    {
+        ST.curdepth++;
+        
+        struct Symbol* S=fundec(DECLARED,t,root->childlist[1]);
+        
+        if(S==NULL) return;
+        //S->type->u.function.defined=DECLARED;
+        //PrintST(&ST);
+        
+        DeleteCurdepth(&ST);
+    }
+    //printf("%d\n",ST.curdepth);
+    //PrintST(&ST);
 }
 
 Type specifier(struct TreeNode* root)
 {
+    //printf("specifier\n");
     if(strcmp(root->childlist[0]->name,"TYPE")==0)
     {
         //printf("%s",root->childlist[0]->extra);
@@ -207,19 +246,22 @@ Type specifier(struct TreeNode* root)
         }
         else
         {
-            printf("specifier basic ERROR");
+            printf("specifier basic ERROR\n");
         }
+        //printf("RETURNNNNNNNNNNNNNNNNNNN:%d\n",t->kind);
         return t;
     }
     else if(strcmp(root->childlist[0]->name,"StructSpecifier")==0)
     {
         Type t=structspecifier(root->childlist[0]);
+        //printf("RETURNNNNNNNNNNNNNNNNNNN:%d\n",t->kind);
         return t;
     }
 }
 
 Type structspecifier(struct TreeNode* root)
 {
+    //printf("structspecifier\n");
     ST.curdepth++;
     //printf("%d\n",ST.curdepth);
     if(root->childnum>2)//StructSpecifier → STRUCT OptTag LC DefList RC
@@ -231,6 +273,7 @@ Type structspecifier(struct TreeNode* root)
 
         if(root->childlist[1]->childnum==0)//OptTag -> e
         {
+            DeleteCurdepth(&ST);
             return t;
         }
         else//OptTag → ID
@@ -240,10 +283,19 @@ Type structspecifier(struct TreeNode* root)
             {
                 struct Symbol* s=malloc(sizeof(struct Symbol));
                 s->name=root->childlist[1]->childlist[0]->extra;
-                s->type=t;
+                
+
+                Type SN=malloc(sizeof(struct Type_));
+                SN->kind=STRUCTNAME;
+                SN->u.structname_type=t;
+                s->type=SN;
+
+                ST.curdepth--;
                 SymbolInsert(&ST,s);
+                ST.curdepth++;
                 //printf("insert struct:%s\n",s->name);
                 //PrintST(&ST);
+                DeleteCurdepth(&ST);
                 return t;
             }
             else//结构体的名字与前面定义过的结构体或变量的名字重复
@@ -260,35 +312,47 @@ Type structspecifier(struct TreeNode* root)
         {
             //PrintST(&ST);
             fprintf(stderr, "Error type 17 at Line %d:%s\n",root->childlist[1]->line,"Undefined structure");
+            DeleteCurdepth(&ST);
             return NULL;
         }
         else
         {
-            return pos->type;
+            DeleteCurdepth(&ST);
+            if(pos->type->kind==STRUCTNAME)
+                return pos->type->u.structname_type;
+            else
+            {
+                printf("ERROR: IS NOT A name of a struct\n");
+                return pos->type;
+            }
         }
     }
-    DeleteCurdepth(&ST);
 }
 
 FieldList deflist_struct(struct TreeNode* root)//DefList → Def DefList| e
 {
+    //printf("deflist_struct\n");
     if(root->childnum==0) return NULL;
     else
     {
         FieldList temp=def_struct(root->childlist[0]);
-        temp->tail=deflist_struct(root->childlist[1]);
+        FieldList cur=temp;
+        while(cur->tail!=NULL) cur=cur->tail;
+        cur->tail=deflist_struct(root->childlist[1]);
+        return temp;
     }
 }
 
 FieldList def_struct(struct TreeNode* root)//Def → Specifier DecList SEMI
 {
-
+    //printf("def_struct\n");
     Type t=specifier(root->childlist[0]);
     return declist_struct(t,root->childlist[1]);
 }
 
 FieldList declist_struct(Type t,struct TreeNode* root)//DecList → Dec| Dec COMMA DecList
 {
+    //printf("declist_struct\n");
     //printf("%d\n",(int)struct_type->u.structure);
     FieldList FL=malloc(sizeof(struct FieldList_));
     FL->type=t;
@@ -307,6 +371,7 @@ FieldList declist_struct(Type t,struct TreeNode* root)//DecList → Dec| Dec COM
 
 void dec_struct(FieldList FL,Type t,struct TreeNode* root)//Dec → VarDec | VarDec ASSIGNOP Exp
 {
+    //printf("dec_struct\n");
     struct TreeNode* r=root->childlist[0];
     while(r->childnum!=1)//VarDec → VarDec LB INT RB
     {
@@ -366,6 +431,7 @@ void dec_struct(FieldList FL,Type t,struct TreeNode* root)//Dec → VarDec | Var
 
 void extdeclist(Type t,struct TreeNode* root)//ExtDecList → VarDec | VarDec COMMA ExtDecList
 {
+    //printf("extdeclist\n");
     if(root->childnum==1)//ExtDecList → VarDec
     {
         vardec(t,root->childlist[0]);
@@ -379,6 +445,7 @@ void extdeclist(Type t,struct TreeNode* root)//ExtDecList → VarDec | VarDec CO
 
 struct Symbol* vardec(Type t,struct TreeNode* root)//VarDec → ID | VarDec LB INT RB
 {
+    //printf("vardec\n");
     struct Symbol* S=malloc(sizeof(struct Symbol));
     //FieldList FL=malloc(sizeof(struct FieldList_));
     //FL->type=t;
@@ -402,10 +469,10 @@ struct Symbol* vardec(Type t,struct TreeNode* root)//VarDec → ID | VarDec LB I
             root=root->childlist[0];
         }
         S->name=root->childlist[0]->extra;
-        if(SymbolFind(&ST,S->name)==NULL)
+        struct Symbol* pos=SymbolFind(&ST,S->name);
+        if(pos==NULL||(pos->stack_depth<ST.curdepth && pos->type->kind!=STRUCTNAME))
         {
             SymbolInsert(&ST,S);
-            
         }
         else
         {
@@ -416,14 +483,18 @@ struct Symbol* vardec(Type t,struct TreeNode* root)//VarDec → ID | VarDec LB I
 }
 
 
-struct Symbol* fundec(Type ret_t,struct TreeNode* root)//FunDec → ID LP VarList RP | ID LP RP
+struct Symbol* fundec(int define,Type ret_t,struct TreeNode* root)//FunDec → ID LP VarList RP | ID LP RP
+//1-define 0-declare
 {
     //printf("fundec\n");
     struct Symbol* S=malloc(sizeof(struct Symbol));
     Type t=malloc(sizeof(struct Type_));
     S->type=t;
     t->kind=FUNCTION;
+    t->u.function.para_list=NULL;
     t->u.function.ret_type=ret_t;
+    t->u.function.line=root->childlist[0]->line;
+    //t->u.function.defined=max(define,t->u.function.defined);
 
     S->name=root->childlist[0]->extra;
     
@@ -437,16 +508,39 @@ struct Symbol* fundec(Type ret_t,struct TreeNode* root)//FunDec → ID LP VarLis
         varlist(t,root->childlist[2]);
     }
     //printf("Finish fundec\n");
-    if(SymbolFind(&ST,S->name)!=NULL)
+    struct Symbol* pos=SymbolFind(&ST,S->name);
+    
+    if(pos!=NULL)
     {
-        fprintf(stderr, "Error type 4 at Line %d:%s\n",root->childlist[0]->line,"Redefined function");
-        return NULL;
+        if(pos->type->u.function.defined==DEFINED && define == DEFINED)
+        {
+            fprintf(stderr, "Error type 4 at Line %d:%s\n",root->childlist[0]->line,"Redefined function");
+            return NULL;
+        }
+        if(check_func_equal(pos->type,t)!=1)
+        {
+            fprintf(stderr, "Error type 19 at Line %d:%s\n",root->childlist[0]->line,"Inconsistent declaration of function");
+            return NULL;
+        }
+        if(define==DECLARED)
+        {
+            pos->type->u.function.defined=(pos->type->u.function.defined>DECLARED?pos->type->u.function.defined:DECLARED);
+            return pos;
+        }
+        else
+        {
+            pos->type->u.function.defined=DEFINED;
+            return pos;
+        }
+        
     }
     else
     {
         ST.curdepth--;
+        S->type->u.function.defined=define;
         SymbolInsert(&ST,S);
         ST.curdepth++;
+        
         return S;
     }
 
@@ -475,6 +569,7 @@ void varlist(Type t,struct TreeNode* root)//t:function
     FieldList FL=malloc(sizeof(struct FieldList_));
     FL->tail=NULL;
     FieldList cur=t->u.function.para_list;
+
     if(cur==NULL)
     {
         t->u.function.para_list=FL;
@@ -486,6 +581,16 @@ void varlist(Type t,struct TreeNode* root)//t:function
     }
     
     FL->type=specifier(root->childlist[0]->childlist[0]);
+
+    // FieldList temp=t->u.function.para_list;
+    // printf("PARALIST:::");
+    // while(temp!=NULL)
+    // {
+    //     printf("%d ",temp->type->kind);
+    //     temp=temp->tail;
+    // }
+    // printf("\n");
+
     struct TreeNode* VD=root->childlist[0]->childlist[1];
     while(VD->childnum!=1)//VarDec → ID | VarDec LB INT RB
     {
@@ -541,7 +646,7 @@ void def_func(struct TreeNode* root)//Def → Specifier DecList SEMI
 void declist_func(Type t,struct TreeNode* root)
 //DecList → Dec | Dec COMMA DecList
 {
-    //printf("declist in function\n");
+    //printf("declist_func\n");
     dec_func(t,root->childlist[0]);
     if(root->childnum>1)
     {
@@ -557,8 +662,11 @@ void dec_func(Type t,struct TreeNode* root)
     if(root->childnum>1)//VarDec ASSIGNOP Exp
     {
         Type exp_type=expp(root->childlist[2]);
+
         if(Type_equal(exp_type,S->type)==0)
         {
+            //fprintf(stderr,"exp_type:%d rettype:%d\n",exp_type->kind,exp_type->u.function.ret_type->kind);
+            //fprintf(stderr,"S->type:%d\n",S->type->kind);
             fprintf(stderr, "Error type 5 at Line %d:%s\n",root->childlist[1]->line," Type mismatched for assignment");
         }
     }
@@ -612,38 +720,42 @@ void stmt(struct Symbol* S, struct TreeNode* root)
     else if(strcmp(root->childlist[0]->name,"IF")==0&&root->childnum==5)
     {
         Type t=expp(root->childlist[2]);
-        if(t->kind=BASIC && t->u.basic==INTT)
-        {
+        // if(t->kind=BASIC && t->u.basic==INTT)
+        // {
 
-        }
-        else
-        {
-            printf("error:if condition\n");
-        }
+        // }
+        // else
+        // {
+        //     //printf("error:if condition\n");
+        // }
+        stmt(S,root->childlist[4]);
     }
     else if(strcmp(root->childlist[0]->name,"IF")==0&&root->childnum==7)
     {
         Type t=expp(root->childlist[2]);
-        if(t->kind=BASIC && t->u.basic==INTT)
-        {
+        // if(t->kind=BASIC && t->u.basic==INTT)
+        // {
 
-        }
-        else
-        {
-            printf("error:if condition\n");
-        }
+        // }
+        // else
+        // {
+        //     //printf("error:if condition\n");
+        // }
+        stmt(S,root->childlist[4]);
+        stmt(S,root->childlist[6]);
     }
     else//WHILE LP Exp RP Stmt
     {
         Type t=expp(root->childlist[2]);
-        if(t->kind=BASIC && t->u.basic==INTT)
-        {
+        // if(t->kind=BASIC && t->u.basic==INTT)
+        // {
 
-        }
-        else
-        {
-            printf("error:while condition\n");
-        }
+        // }
+        // else
+        // {
+        //     //printf("error:while condition\n");
+        // }
+        stmt(S,root->childlist[4]);
     }
 }
 
@@ -675,7 +787,7 @@ Type expp(struct TreeNode* root)
     //printf("%s\n",root->childlist[0]->name);
     if(strcmp(root->childlist[0]->name,"Exp")==0 && strcmp(root->childlist[1]->name,"ASSIGNOP")==0)
     {
-        //printf("%s\n",root->childlist[0]->childlist[0]->name);
+        //printf("Exp ASSIGNOP Exp\n");
         if(   (strcmp(root->childlist[0]->childlist[0]->name,"ID")==0)
             ||(strcmp(root->childlist[0]->childlist[0]->name,"Exp")==0 && strcmp(root->childlist[0]->childlist[1]->name,"LB")==0)
             ||(strcmp(root->childlist[0]->childlist[0]->name,"Exp")==0 && strcmp(root->childlist[0]->childlist[1]->name,"DOT")==0)
@@ -685,12 +797,20 @@ Type expp(struct TreeNode* root)
             Type t2 = expp(root->childlist[2]);
             if(t1==NULL || t2==NULL) return NULL;
 
+            if(t1->kind==FUNCTION)
+            {
+                fprintf(stderr, "Error type 6 at Line %d:%s\n",root->childlist[0]->line,"The left-hand side of an assignment must be a variable");
+                return NULL;
+            }
+
             if(Type_equal(t1,t2)==1)
             {
                 return t1;
             }
             else
             {
+                //fprintf(stderr,"exp_type:%d %d\n",t1->kind,t1->u.basic);
+                //fprintf(stderr,"Vardec_type:%d %d\n",t2->kind,t2->u.basic);
                 fprintf(stderr, "Error type 5 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for assignment");
                 return NULL;
             }
@@ -706,6 +826,8 @@ Type expp(struct TreeNode* root)
         Type t1 = expp(root->childlist[0]);
         Type t2 = expp(root->childlist[2]);
         if(t1==NULL || t2==NULL) return NULL;
+        while(t1->kind==FUNCTION) t1=t1->u.function.ret_type;
+        while(t2->kind==FUNCTION) t2=t2->u.function.ret_type;
 
         if(t1->kind==BASIC && t1->u.basic==INTT && Type_equal(t1,t2)==1)
         {
@@ -713,7 +835,7 @@ Type expp(struct TreeNode* root)
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands AND");
             return NULL;
         }
     }
@@ -722,30 +844,44 @@ Type expp(struct TreeNode* root)
         Type t1 = expp(root->childlist[0]);
         Type t2 = expp(root->childlist[2]);
         if(t1==NULL || t2==NULL) return NULL;
-
+        while(t1->kind==FUNCTION) t1=t1->u.function.ret_type;
+        while(t2->kind==FUNCTION) t2=t2->u.function.ret_type;
         if(t1->kind==BASIC && t1->u.basic==INTT && Type_equal(t1,t2)==1)
         {
             return t1;
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands OR");
             return NULL;
         }
     }
     else if(strcmp(root->childlist[0]->name,"Exp")==0 && strcmp(root->childlist[1]->name,"RELOP")==0)
     {
+        //printf("Exp RELOP Exp\n");
         Type t1 = expp(root->childlist[0]);
         Type t2 = expp(root->childlist[2]);
-        if(t1==NULL || t2==NULL) return NULL;
+        //printf("%d\n",t1);
+        //printf("%d\n",t2->u.basic);
+        if(t1==NULL || t2==NULL) 
+        {
+            //printf("return NULL \n");
+            return NULL;
+        }
 
+        while(t1->kind==FUNCTION) t1=t1->u.function.ret_type;
+        while(t2->kind==FUNCTION) t2=t2->u.function.ret_type;
         if(t1->kind==BASIC && Type_equal(t1,t2)==1)
         {
-            return t1;
+            Type temp_t=malloc(sizeof(struct Type_));
+            temp_t->kind=BASIC;
+            temp_t->u.basic=INTT;
+            return temp_t;
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            //printf("%s\n",root->childlist[1]->extra);
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands RELOP");
             return NULL;
         }
     }
@@ -754,14 +890,15 @@ Type expp(struct TreeNode* root)
         Type t1 = expp(root->childlist[0]);
         Type t2 = expp(root->childlist[2]);
         if(t1==NULL || t2==NULL) return NULL;
-
+        while(t1->kind==FUNCTION) t1=t1->u.function.ret_type;
+        while(t2->kind==FUNCTION) t2=t2->u.function.ret_type;
         if(t1->kind==BASIC && Type_equal(t1,t2)==1)
         {
             return t1;
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands PLUS");
             return NULL;
         }
     }
@@ -770,14 +907,15 @@ Type expp(struct TreeNode* root)
         Type t1 = expp(root->childlist[0]);
         Type t2 = expp(root->childlist[2]);
         if(t1==NULL || t2==NULL) return NULL;
-
+        while(t1->kind==FUNCTION) t1=t1->u.function.ret_type;
+        while(t2->kind==FUNCTION) t2=t2->u.function.ret_type;
         if(t1->kind==BASIC && Type_equal(t1,t2)==1)
         {
             return t1;
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands MINUS");
             return NULL;
         }
     }
@@ -786,13 +924,15 @@ Type expp(struct TreeNode* root)
         Type t1 = expp(root->childlist[0]);
         Type t2 = expp(root->childlist[2]);
         if(t1==NULL || t2==NULL) return NULL;
+        while(t1->kind==FUNCTION) t1=t1->u.function.ret_type;
+        while(t2->kind==FUNCTION) t2=t2->u.function.ret_type;       
         if(t1->kind==BASIC && Type_equal(t1,t2)==1)
         {
             return t1;
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands STAR");
             return NULL;
         }
     }
@@ -801,13 +941,15 @@ Type expp(struct TreeNode* root)
         Type t1 = expp(root->childlist[0]);
         Type t2 = expp(root->childlist[2]);
         if(t1==NULL || t2==NULL) return NULL;
+        while(t1->kind==FUNCTION) t1=t1->u.function.ret_type;
+        while(t2->kind==FUNCTION) t2=t2->u.function.ret_type;
         if(t1->kind==BASIC && Type_equal(t1,t2)==1)
         {
             return t1;
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands DIV");
             return NULL;
         }
     }
@@ -820,13 +962,14 @@ Type expp(struct TreeNode* root)
     {
         Type t = expp(root->childlist[1]);
         if(t==NULL) return NULL;
+        while(t->kind==FUNCTION) t=t->u.function.ret_type;
         if(t->kind==BASIC)
         {
             return t;
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands MINUS EXP");
             return NULL;
         }
     }
@@ -834,19 +977,22 @@ Type expp(struct TreeNode* root)
     {
         Type t = expp(root->childlist[1]);
         if(t==NULL) return NULL;
+        while(t->kind==FUNCTION) t=t->u.function.ret_type;
         if(t->kind==BASIC && t->u.basic==INTT)
         {
-            return expp(root->childlist[1]);
+            return t;
         }
         else
         {
-            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands");
+            fprintf(stderr, "Error type 7 at Line %d:%s\n",root->childlist[0]->line,"Type mismatched for operands NOT");
             return NULL;
         }
     }
     else if(strcmp(root->childlist[0]->name,"ID")==0 && root->childnum==4)//ID LP Args RP  //Args → Exp COMMA Args | Exp
     {
         struct Symbol* S=SymbolFind(&ST,root->childlist[0]->extra);
+        //PrintST(&ST);
+        //printf("%s\n",S->name);
         if(S==NULL)
         {
             fprintf(stderr, "Error type 2 at Line %d:%s\n",root->childlist[0]->line,"Undefined function");
@@ -860,8 +1006,9 @@ Type expp(struct TreeNode* root)
         if(check_funpara(S->type->u.function.para_list,root->childlist[2])==1) return S->type;
         else
         {
+            //printf("%d\n",S->type->u.function.para_list->type->kind);
             fprintf(stderr, "Error type 9 at Line %d:%s\n",root->childlist[0]->line,"arguments do not suit function");
-            return NULL;
+            return S->type;
         }
     }
     else if(strcmp(root->childlist[0]->name,"ID")==0 && root->childnum==3)//ID LP RP
@@ -880,8 +1027,9 @@ Type expp(struct TreeNode* root)
         if(S->type->u.function.para_list==NULL) return S->type;
         else
         {
+            //printf("NULL!\n");
             fprintf(stderr, "Error type 9 at Line %d:%s\n",root->childlist[0]->line,"arguments do not suit function");
-            return NULL;
+            return S->type;
         }
     }
 
@@ -988,6 +1136,38 @@ int check_funpara(FieldList FL,struct TreeNode* root)//Args → Exp COMMA Args |
     }
     else
     {
+        //printf("%d != %d\n",FL->type->kind,expp(root->childlist[0])->kind);
         return 0;
+    }
+}
+
+int check_func_equal(Type t1,Type t2)
+{
+    
+    if(Type_equal(t1->u.function.ret_type,t2->u.function.ret_type)==1 && FL_equal(t1->u.function.para_list,t2->u.function.para_list)==1)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void check_only_declared_func(struct SymbolTable* ST)
+{
+    for(int i=0;i<TABLESIZE;i++)
+    {
+        struct Symbol* cur=ST->HashTable[i];
+        while(cur!=NULL)
+        {
+            //printf("NAME:%s TYPE:%d ",cur->name,cur->type->kind);
+            if(cur->type->kind==FUNCTION && cur->type->u.function.defined==DECLARED)
+            {
+                fprintf(stderr, "Error type 18 at Line %d:%s\n",cur->type->u.function.line," Undefined function");
+            }
+            cur=cur->hash_next;
+            //printf("\n");
+        }
     }
 }
