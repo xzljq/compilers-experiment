@@ -5,7 +5,9 @@
         "assert.h": "c",
         "senmatic.h": "c",
         "syntax.tab.h": "c",
-        "*.cmm": "c"
+        "*.cmm": "c",
+        "limits": "c",
+        "ir.h": "c"
     },
     "makefile.launchConfigurations": [
         {
