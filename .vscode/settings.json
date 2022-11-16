@@ -7,7 +7,9 @@
         "syntax.tab.h": "c",
         "*.cmm": "c",
         "limits": "c",
-        "ir.h": "c"
+        "ir.h": "c",
+        "treenode.h": "c",
+        "debug.h": "c"
     },
     "makefile.launchConfigurations": [
         {

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "TreeNode.h"
+#include "debug.h"
 #define TABLESIZE 0x3fff
 #define STACKSIZE 0x1000
 
@@ -76,6 +77,7 @@ struct Symbol* SymbolFind(struct SymbolTable* ST,char* name);
 void SymbolInsert(struct SymbolTable* ST,struct Symbol* s);
 void DeleteCurdepth(struct SymbolTable* ST);
 void PrintST(struct SymbolTable* ST);
+void Insert_func(char* str);
 
 void senmatic_check(struct TreeNode* root);
 void program(struct TreeNode* root);

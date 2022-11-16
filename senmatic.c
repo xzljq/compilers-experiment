@@ -2,7 +2,7 @@
 
 extern struct TreeNode* root;
 
-static struct SymbolTable ST;
+struct SymbolTable ST;
 
 unsigned int hash_pjw(char* name)
 { 
@@ -167,8 +167,52 @@ struct Symbol* SymbolFindCurDepth(struct SymbolTable* ST,char* name)
 
 void senmatic_check(struct TreeNode* root)
 {
+    Insert_func("read");
+    Insert_func("write");
     program(root);
     check_only_declared_func(&ST);
+}
+
+void Insert_func(char* str)
+{
+    #ifdef _DEBUG
+        printf("insert func %s\n",str);
+    #endif
+    struct Symbol* s=malloc(sizeof(struct Symbol));
+
+    s->name=malloc(20);
+    strcpy(s->name,str);
+    s->type=malloc(sizeof(struct Type_));
+    s->type->kind=FUNCTION;
+    s->type->u.function.ret_type=malloc(sizeof(struct Type_));
+    s->type->u.function.ret_type->kind=BASIC;
+    s->type->u.function.ret_type->u.basic=INTT;
+
+    s->type->u.function.defined=DEFINED;
+
+    if(strcmp(str,"read")==0)
+    {
+        s->type->u.function.num=0;
+        s->type->u.function.para_list=NULL;
+    }
+    else if(strcmp(str,"write")==0)
+    {
+        s->type->u.function.num=1;
+        
+        FieldList FL=malloc(sizeof(struct FieldList_));
+        Type t=malloc(sizeof(struct Type_));
+        t->kind=BASIC;
+        t->u.basic=0;
+        FL->type=t;
+        FL->tail=NULL;
+
+        s->type->u.function.para_list=FL;
+    }
+    else
+    {
+
+    }
+    SymbolInsert(&ST,s);
 }
 
 void program(struct TreeNode* root)
@@ -181,6 +225,7 @@ void extdeflist(struct TreeNode* root)
     //printf("ExtDefList\n");
     if(root->childnum>0)
     {
+        //printf("%d\n",root->childnum);
         extdef(root->childlist[0]);
         extdeflist(root->childlist[1]);
     }
