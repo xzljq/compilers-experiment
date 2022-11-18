@@ -16,7 +16,11 @@ void writeToFile(struct InterCodes* head,FILE* f)
         {
             if(head->code.u.assign.left==NULL)
             {
-                return;
+                #ifdef _DEBUG
+                printf("left is NULL\n");
+                #endif
+                head=head->next;
+                continue;
             }
             #ifdef _DEBUG
             print_OP(head->code.u.assign.left);
@@ -160,6 +164,10 @@ void writeToFile(struct InterCodes* head,FILE* f)
         }
         else if(head->code.kind==IC_READ)
         {
+            if(head->code.u.read.op_read==NULL)
+            {
+                head->code.u.read.op_read=new_temp();
+            }
             #ifdef _DEBUG
             printf("READ ");
 			print_OP(head->code.u.read.op_read);
@@ -180,6 +188,13 @@ void writeToFile(struct InterCodes* head,FILE* f)
         }
         else if(head->code.kind==IC_CALL)
         {
+            if(head->code.u.call.x==NULL)
+            {
+                #ifdef _DEBUG
+                printf("ADD A USELESS FUNC RET\n");
+                #endif
+                head->code.u.call.x=new_temp();
+            }
             #ifdef _DEBUG
             print_OP(head->code.u.call.x);
             printf(" := CALL ");
@@ -210,7 +225,7 @@ void writeToFile(struct InterCodes* head,FILE* f)
 
             fprintf(f, "DEC ");
 			write_OP(head->code.u.dec.x,f);
-            fprintf(f, " [%d]",head->code.u.dec.size);
+            fprintf(f, " %d",head->code.u.dec.size);
         }
         else if(head->code.kind==IC_PARAM)
         {
@@ -328,7 +343,7 @@ Operand new_temp()
 {
     Operand temp=malloc(sizeof(struct Operand_));
     temp->kind=VARIABLE;
-    temp->u.var_name=malloc(20);
+    temp->u.var_name=malloc(100);
     sprintf(temp->u.var_name,"t%d", temp_count++);
     return temp;
 }
@@ -337,7 +352,7 @@ Operand new_lable()
 {
     Operand lable=malloc(sizeof(struct Operand_));
     lable->kind=LABLE;
-    lable->u.lable_name=malloc(20);
+    lable->u.lable_name=malloc(100);
     sprintf(lable->u.lable_name,"lable%d", lable_count++);
     return lable;
 }
@@ -367,7 +382,7 @@ Operand new_constant(int value)
 
 void connect_ic(struct InterCodes* code1,struct InterCodes* code2)
 {
-    //sprintf("connect %d %d\n",(int)code1,(int)code2);
+    //printf("connect %d %d\n",(int)code1,(int)code2);
     if(code1==NULL&&code2==NULL)
     {
         printf("INTERCODE CONNECT ERROR\n");
@@ -402,12 +417,25 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         #ifdef _DEBUG
             printf("Exp ASSIGNOP Exp\n");
         #endif
+
+        // Operand t1=new_temp();
+        // Operand t2=new_temp();
+        // struct InterCodes* code1=translate_Exp(Exp->childlist[0],sym_table,t1);
+        // struct InterCodes* code2=translate_Exp(Exp->childlist[2],sym_table,t2);
+        // struct InterCodes* code_assign=new_code();
+        // code_assign->code.kind=IC_ASSIGN;
+        // code_assign->code.u.assign.left=t1;
+        // code_assign->code.u.assign.right=t2;
+
+
+        
+
         if(strcmp(Exp->childlist[0]->childlist[0]->name,"ID")==0 && Exp->childlist[0]->childnum==1)//单个变量访问
         {
-            
             struct Symbol* S = SymbolFind(&ST,Exp->childlist[0]->childlist[0]->extra);
             Operand t1=new_temp();
             struct InterCodes* code1=translate_Exp(Exp->childlist[2],&ST,t1);
+
             struct InterCodes* code2=new_code();
             code2->code.kind=IC_ASSIGN;
             Operand variable=malloc(sizeof(struct Operand_));
@@ -432,11 +460,40 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         }
         else if(strcmp(Exp->childlist[0]->childlist[0]->name,"Exp")==0 && strcmp(Exp->childlist[0]->childlist[1]->name,"LB")==0)//数组元素访问
         {
+            //1维数组
+            Operand t1=new_temp();
+            t1->kind=ADDRESS;
+            struct InterCodes* code1=translate_Exp(Exp->childlist[0],sym_table,t1);
 
+            Operand t2=new_temp();
+            struct InterCodes* code2=translate_Exp(Exp->childlist[2],sym_table,t2);
+
+            struct InterCodes* code3=new_code();
+            code3->code.kind=IC_L_DEREF;
+            code3->code.u.assign.left=t1;
+            code3->code.u.assign.right=t2;
+
+            connect_ic(code1,code2);
+            connect_ic(code2,code3);
+            return code1;
         }
         else//结构体特定域的访问
         {
+            Operand t1=new_temp();
+            t1->kind=ADDRESS;
+            struct InterCodes* code1=translate_Exp(Exp->childlist[0],sym_table,t1);
 
+            Operand t2=new_temp();
+            struct InterCodes* code2=translate_Exp(Exp->childlist[2],sym_table,t2);
+
+            struct InterCodes* code3=new_code();
+            code3->code.kind=IC_L_DEREF;
+            code3->code.u.assign.left=t1;
+            code3->code.u.assign.right=t2;
+
+            connect_ic(code1,code2);
+            connect_ic(code2,code3);
+            return code1;
         }
     }
     else if(strcmp(Exp->childlist[0]->name,"Exp")==0 && strcmp(Exp->childlist[1]->name,"AND")==0)
@@ -449,9 +506,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
 
         struct InterCodes* code0=new_code();
         code0->code.kind=IC_ASSIGN;
-        Operand variable=malloc(sizeof(struct Operand_));
-        variable->kind=CONSTANT;
-        variable->u.value=0;
+        Operand variable=new_constant(0);
         code0->code.u.assign.right=variable;
         code0->code.u.assign.left=place;
 
@@ -463,9 +518,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
 
         struct InterCodes* code2_2=new_code();
         code2_2->code.kind=IC_ASSIGN;
-        Operand variable2=malloc(sizeof(struct Operand_));
-        variable2->kind=CONSTANT;
-        variable2->u.value=1;
+        Operand variable2=new_constant(1);
         code2_2->code.u.assign.right=variable2;
         code2_2->code.u.assign.left=place;
 
@@ -490,9 +543,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
 
         struct InterCodes* code0=new_code();
         code0->code.kind=IC_ASSIGN;
-        Operand variable=malloc(sizeof(struct Operand_));
-        variable->kind=CONSTANT;
-        variable->u.value=0;
+        Operand variable=new_constant(0);
         code0->code.u.assign.right=variable;
         code0->code.u.assign.left=place;
 
@@ -504,9 +555,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
 
         struct InterCodes* code2_2=new_code();
         code2_2->code.kind=IC_ASSIGN;
-        Operand variable2=malloc(sizeof(struct Operand_));
-        variable2->kind=CONSTANT;
-        variable2->u.value=1;
+        Operand variable2=new_constant(1);
         code2_2->code.u.assign.right=variable2;
         code2_2->code.u.assign.left=place;
 
@@ -531,9 +580,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
 
         struct InterCodes* code0=new_code();
         code0->code.kind=IC_ASSIGN;
-        Operand variable=malloc(sizeof(struct Operand_));
-        variable->kind=CONSTANT;
-        variable->u.value=0;
+        Operand variable=new_constant(0);
         code0->code.u.assign.right=variable;
         code0->code.u.assign.left=place;
 
@@ -545,9 +592,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
 
         struct InterCodes* code2_2=new_code();
         code2_2->code.kind=IC_ASSIGN;
-        Operand variable2=malloc(sizeof(struct Operand_));
-        variable2->kind=CONSTANT;
-        variable2->u.value=1;
+        Operand variable2=new_constant(1);
         code2_2->code.u.assign.right=variable2;
         code2_2->code.u.assign.left=place;
 
@@ -567,18 +612,25 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         #ifdef _DEBUG
             printf("Exp PLUS Exp\n");
         #endif
+
         Operand t1=new_temp();
         Operand t2=new_temp();
         struct InterCodes* code1=translate_Exp(Exp->childlist[0],&ST,t1);
         struct InterCodes* code2=translate_Exp(Exp->childlist[2],&ST,t2);
-        struct InterCodes* code3=new_code();
-        code3->code.kind=IC_ADD;
-        code3->code.u.binop.op1=t1;
-        code3->code.u.binop.op2=t2;
-        code3->code.u.binop.result=place;
+
+        if(place!=NULL)
+        {
+            struct InterCodes* code3=new_code();
+            code3->code.kind=IC_ADD;
+            code3->code.u.binop.op1=t1;
+            code3->code.u.binop.op2=t2;
+            code3->code.u.binop.result=place;
+
+            connect_ic(code2,code3);
+        }
+        
 
         connect_ic(code1,code2);
-        connect_ic(code2,code3);
         return code1;
     }
     else if(strcmp(Exp->childlist[0]->name,"Exp")==0 && strcmp(Exp->childlist[1]->name,"MINUS")==0)
@@ -590,14 +642,20 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         Operand t2=new_temp();
         struct InterCodes* code1=translate_Exp(Exp->childlist[0],&ST,t1);
         struct InterCodes* code2=translate_Exp(Exp->childlist[2],&ST,t2);
-        struct InterCodes* code3=new_code();
-        code3->code.kind=IC_SUB;
-        code3->code.u.binop.op1=t1;
-        code3->code.u.binop.op2=t2;
-        code3->code.u.binop.result=place;
+
+        if(place!=NULL)
+        {
+            struct InterCodes* code3=new_code();
+            code3->code.kind=IC_SUB;
+            code3->code.u.binop.op1=t1;
+            code3->code.u.binop.op2=t2;
+            code3->code.u.binop.result=place;
+
+            connect_ic(code2,code3);
+        }
 
         connect_ic(code1,code2);
-        connect_ic(code2,code3);
+        
         return code1;
     }
     else if(strcmp(Exp->childlist[0]->name,"Exp")==0 && strcmp(Exp->childlist[1]->name,"STAR")==0)
@@ -609,14 +667,19 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         Operand t2=new_temp();
         struct InterCodes* code1=translate_Exp(Exp->childlist[0],&ST,t1);
         struct InterCodes* code2=translate_Exp(Exp->childlist[2],&ST,t2);
-        struct InterCodes* code3=new_code();
-        code3->code.kind=IC_MUL;
-        code3->code.u.binop.op1=t1;
-        code3->code.u.binop.op2=t2;
-        code3->code.u.binop.result=place;
+
+        if(place!=NULL)
+        {
+            struct InterCodes* code3=new_code();
+            code3->code.kind=IC_MUL;
+            code3->code.u.binop.op1=t1;
+            code3->code.u.binop.op2=t2;
+            code3->code.u.binop.result=place;
+
+            connect_ic(code2,code3);
+        }
 
         connect_ic(code1,code2);
-        connect_ic(code2,code3);
         return code1;
     }
     else if(strcmp(Exp->childlist[0]->name,"Exp")==0 && strcmp(Exp->childlist[1]->name,"DIV")==0)
@@ -628,14 +691,20 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         Operand t2=new_temp();
         struct InterCodes* code1=translate_Exp(Exp->childlist[0],&ST,t1);
         struct InterCodes* code2=translate_Exp(Exp->childlist[2],&ST,t2);
-        struct InterCodes* code3=new_code();
-        code3->code.kind=IC_DIV;
-        code3->code.u.binop.op1=t1;
-        code3->code.u.binop.op2=t2;
-        code3->code.u.binop.result=place;
+
+        if(place!=NULL)
+        {
+            struct InterCodes* code3=new_code();
+            code3->code.kind=IC_DIV;
+            code3->code.u.binop.op1=t1;
+            code3->code.u.binop.op2=t2;
+            code3->code.u.binop.result=place;
+            
+            connect_ic(code2,code3);
+        }
+        
 
         connect_ic(code1,code2);
-        connect_ic(code2,code3);
         return code1;
     }
     else if(strcmp(Exp->childlist[0]->name,"LP")==0)//LP Exp RP
@@ -643,6 +712,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         #ifdef _DEBUG
             printf("LP Exp RP\n");
         #endif
+        return translate_Exp(Exp->childlist[1],sym_table,place);
     }
     else if(strcmp(Exp->childlist[0]->name,"MINUS")==0)//MINUS Exp
     {
@@ -651,15 +721,18 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         #endif
         Operand t1=new_temp();
         struct InterCodes* code1=translate_Exp(Exp->childlist[1],&ST,t1);
-        struct InterCodes* code2=new_code();
-        code2->code.kind=IC_SUB;
-        code2->code.u.binop.op1=malloc(sizeof(struct Operand_));
-        code2->code.u.binop.op1->kind=CONSTANT;
-        code2->code.u.binop.op1->u.value=0;
-        code2->code.u.binop.op2=t1;
-        code2->code.u.binop.result=place;
 
-        connect_ic(code1,code2);
+        if(place!=NULL)
+        {
+            struct InterCodes* code2=new_code();
+            code2->code.kind=IC_SUB;
+            code2->code.u.binop.op1=new_constant(0);
+            code2->code.u.binop.op2=t1;
+            code2->code.u.binop.result=place;
+
+            connect_ic(code1,code2);
+        }
+
         return code1;
     }
     else if(strcmp(Exp->childlist[0]->name,"NOT")==0)//NOT Exp
@@ -672,9 +745,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
 
         struct InterCodes* code0=new_code();
         code0->code.kind=IC_ASSIGN;
-        Operand variable=malloc(sizeof(struct Operand_));
-        variable->kind=CONSTANT;
-        variable->u.value=0;
+        Operand variable=new_constant(0);
         code0->code.u.assign.right=variable;
         code0->code.u.assign.left=place;
 
@@ -686,9 +757,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
 
         struct InterCodes* code2_2=new_code();
         code2_2->code.kind=IC_ASSIGN;
-        Operand variable2=malloc(sizeof(struct Operand_));
-        variable2->kind=CONSTANT;
-        variable2->u.value=1;
+        Operand variable2=new_constant(1);
         code2_2->code.u.assign.right=variable2;
         code2_2->code.u.assign.left=place;
 
@@ -738,10 +807,15 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         struct InterCodes* code2=NULL;
         while(arg_list!=NULL)
         {
+            //printf("HALO\n");
             struct InterCodes* code_arg=new_code();
             code_arg->code.kind=IC_ARG;
             code_arg->code.u.arg.x=arg_list->op;
-            connect_ic(code2,code_arg);
+            if(code2==NULL)
+                code2=code_arg;
+            else 
+                connect_ic(code2,code_arg);
+            arg_list=arg_list->next;
         }
 
         struct InterCodes* code_call=new_code();
@@ -782,12 +856,219 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         #ifdef _DEBUG
             printf("Exp LB Exp RB\n");
         #endif
+
+        // translate_Exp(Exp2, t1);
+		// 	t2 = t1*4;
+		// 	translate_Exp(Exp1, ID);
+		// 	t3 = &ID;
+		// 	place = t3+t2;
+        
+        struct TreeNode* root=Exp;
+
+
+        int depth=0;
+        while(root->childnum!=1 && strcmp(root->childlist[1]->name,"LB")==0)
+        {
+            root=root->childlist[0];
+            depth++;
+        }
+
+        int save_depth=depth;
+        //printf("aaaaaaaaaaaaaaaaaaaaaaaaaa:  %d\n",depth);
+        Type test,test2;
+        struct Symbol* s;
+        char* name;
+        FieldList FL;
+        if(root->childnum==1)
+        {
+            name=root->childlist[0]->extra;
+            s=SymbolFind(sym_table,name);
+            test=s->type;
+        }
+        else
+        {
+            printf("%s\n",root->childlist[2]->extra);
+            FL=Find_ID_Struct(sym_table,root->childlist[2]->extra);
+            test=FL->type;
+        }
+        
+        test2=test;
+        int total_depth=0;
+        while(test->kind==ARRAY)
+        {
+            total_depth++;
+            test=test->u.array.elem;
+        }
+        int flag=0;
+        if(test->kind!=BASIC)
+        {
+            flag=1;
+        }
+        
+        Type cur, next;
+        
+        if(root->childnum==1)
+        {
+            cur=s->type;
+            next=s->type->u.array.elem;
+        }
+        else
+        {
+            cur=test2;
+            next=test2->u.array.elem;
+        }
+        cur->upper=NULL;
+        //int ele_size;
+        while(depth>1)
+        {
+            next->upper=cur;
+            cur=next;
+            next=next->u.array.elem;
+            depth--;
+        }
+        next->upper=cur;
+        cur=next;
+        //ele_size=szof(next);
+
+        Operand temp_sum=new_temp();
+        struct InterCodes* code0=new_code();
+        code0->code.kind=IC_ASSIGN;
+        code0->code.u.assign.left=temp_sum;
+        code0->code.u.assign.right=new_constant(0);
+
+        root=Exp;
+        while(root->childnum!=1 && strcmp(root->childlist[1]->name,"LB")==0)
+        {
+            Operand t=new_temp();
+            struct InterCodes* code_exp2=translate_Exp(root->childlist[2],sym_table,t);
+
+            struct InterCodes* code1=new_code();
+            code1->code.kind=IC_MUL;
+            code1->code.u.binop.result=t;
+            code1->code.u.binop.op1=t;
+            code1->code.u.binop.op2=new_constant(szof(cur));
+            
+            struct InterCodes* code2=new_code();
+            code2->code.kind=IC_ADD;
+            code2->code.u.binop.result=temp_sum;
+            code2->code.u.binop.op1=temp_sum;
+            code2->code.u.binop.op2=t;
+
+
+            connect_ic(code0,code_exp2);
+            connect_ic(code_exp2,code1);
+            connect_ic(code1,code2);
+
+            cur=cur->upper;
+            root=root->childlist[0];
+        }
+
+
+
+        Operand temp1=new_temp();
+        // Operand temp2=new_temp();
+        struct InterCodes* code_E;
+        if(root->childnum==1) temp1->u.var_name=name;
+        else
+        {
+            temp1->kind=ADDRESS;
+            code_E=translate_Exp(root,sym_table,temp1);
+        }
+        // struct InterCodes* code1=new_code();
+        // code1->code.kind=IC_ADDR;
+        // code1->code.u.addr.left=temp1;
+        // code1->code.u.addr.right=temp2;
+
+        
+        
+
+        //printf("HHHHHHHHHHHHHHHHHHH  place:%d  depth:%d total_depth:%d\n",(int)place,depth,total_depth);
+        if(place!=NULL&&(place->kind==ADDRESS||save_depth<total_depth ||flag==1))
+        {
+            struct InterCodes* code2=new_code();
+            code2->code.kind=IC_ADD;
+            code2->code.u.binop.result=place;
+            code2->code.u.binop.op1=temp1;
+            code2->code.u.binop.op2=temp_sum;
+            
+            if(root->childnum!=1)
+            {
+                connect_ic(code0,code_E);
+                connect_ic(code_E,code2);
+            }
+            else
+                connect_ic(code0,code2);
+            //connect_ic(code1,code2);
+            return code0;
+        }
+        else
+        {
+            struct InterCodes* code2=new_code();
+            Operand temp3=new_temp();
+            code2->code.kind=IC_ADD;
+            code2->code.u.binop.result=temp3;
+            code2->code.u.binop.op1=temp1;
+            code2->code.u.binop.op2=temp_sum;
+            connect_ic(code0,code2);
+            //connect_ic(code1,code2);
+            
+            if(place!=NULL)
+            {
+                struct InterCodes* code3 = new_code();
+                code3->code.kind=IC_R_DEREF;
+                code3->code.u.r_deref.left=place;
+                code3->code.u.r_deref.right=temp3;
+                connect_ic(code2,code3);
+                return code0;
+            }
+            return NULL;
+        }
     }
     else if(strcmp(Exp->childlist[0]->name,"Exp")==0 && strcmp(Exp->childlist[1]->name,"DOT")==0)//Exp DOT ID
     {
         #ifdef _DEBUG
             printf("Exp DOT ID\n");
         #endif
+        Operand t1=new_temp();
+        t1->kind=ADDRESS;
+        struct InterCodes* code1=translate_Exp(Exp->childlist[0],sym_table,t1);
+
+        Operand t2=new_temp();
+        struct InterCodes* code2=new_code();
+        code2->code.kind=IC_ASSIGN;
+        code2->code.u.assign.left=t2;
+        code2->code.u.assign.right=new_constant(Find_ID_Struct(sym_table,Exp->childlist[2]->extra)->offset);
+
+        struct InterCodes* code3=new_code();
+        code3->code.kind=IC_ADD;
+        code3->code.u.binop.result=t1;
+        code3->code.u.binop.op1=t1;
+        code3->code.u.binop.op2=t2;
+
+        if(place!=NULL)
+        {
+            if(place->kind==ADDRESS)
+            {
+                struct InterCodes* code4=new_code();
+                code4->code.kind=IC_ASSIGN;
+                code4->code.u.assign.left=place;
+                code4->code.u.assign.right=t1;
+                connect_ic(code3,code4);
+            }
+            else
+            {
+                struct InterCodes* code4=new_code();
+                code4->code.kind=IC_R_DEREF;
+                code4->code.u.assign.left=place;
+                code4->code.u.assign.right=t1;
+                connect_ic(code3,code4);
+            }
+        }
+        
+
+        connect_ic(code1,code2);
+        connect_ic(code2,code3);
+        return code1;
     }
     else if(strcmp(Exp->childlist[0]->name,"ID")==0 && Exp->childnum==1)
     {
@@ -811,9 +1092,7 @@ struct InterCodes* translate_Exp(struct TreeNode* Exp, struct SymbolTable* sym_t
         #ifdef _DEBUG
             printf("INT\n");
         #endif
-        Operand right=malloc(sizeof(struct Operand_));
-        right->kind=CONSTANT;
-        right->u.value=Exp->childlist[0]->INT;
+        Operand right=new_constant(Exp->childlist[0]->INT);
 
         struct InterCodes* ic=new_code();
 
@@ -976,10 +1255,11 @@ struct InterCodes*  translate_CompSt(struct TreeNode* CompSt,struct SymbolTable*
         printf("translate_CompSt!\n");
     #endif
     //CompSt → LC DefList StmtList RC
-    //struct InterCodes* code1=translate_DefList(CompSt->childlist[1]);
+    struct InterCodes* code1=translate_DefList(CompSt->childlist[1]);
     struct InterCodes* code2=translate_StmtList(CompSt->childlist[2],sym_table);
-    //connect_ic(code1,code2);
-    return code2;
+    if(code1!=NULL) connect_ic(code1,code2);
+    else code1=code2;
+    return code1;
 }
 
 struct InterCodes* translate_StmtList(struct TreeNode* StmtList,struct SymbolTable* sym_table)
@@ -991,7 +1271,11 @@ struct InterCodes* translate_StmtList(struct TreeNode* StmtList,struct SymbolTab
     if(StmtList->childnum==2)
     {
         struct InterCodes* code1=translate_Stmt(StmtList->childlist[0],sym_table);
+        
         struct InterCodes* code2=translate_StmtList(StmtList->childlist[1],sym_table);
+        #ifdef _DEBUG
+            printf("Connect Stmt StmtList\n");
+        #endif
         connect_ic(code1,code2);
         return code1;
     }
@@ -1074,9 +1358,7 @@ struct InterCodes* translate_Cond(struct TreeNode* Exp,Operand label_true, Opera
         code2->code.u.ifgt.relop->u.relop=malloc(5);
         strcpy(code2->code.u.ifgt.relop->u.relop,"!=");
 
-        code2->code.u.ifgt.y=malloc(sizeof(struct Operand_));
-        code2->code.u.ifgt.y->kind=CONSTANT;
-        code2->code.u.ifgt.y->u.value=0;
+        code2->code.u.ifgt.y=new_constant(0);
         code2->code.u.ifgt.z=label_true;
 
         struct InterCodes* code_goto=new_code();
@@ -1098,6 +1380,8 @@ struct InterCodes* translate_Args(struct TreeNode* Args,struct SymbolTable* sym_
     if(Args->childnum==1)//Exp
     {
         Operand t1=new_temp();
+        //if(strcmp(Args->childlist[0]->childlist[0]->name,"Exp")==0 && strcmp(Args->childlist[0]->childlist[1]->name,"LB")==0)
+        //    t1->kind=ADDRESS;
         struct InterCodes* code1=translate_Exp(Args->childlist[0],sym_table,t1);
         struct operandlist* temp=malloc(sizeof(struct operandlist));
         temp->op=t1;
@@ -1115,7 +1399,7 @@ struct InterCodes* translate_Args(struct TreeNode* Args,struct SymbolTable* sym_
         temp->op=t1;
         temp->next=*arg_list;
         temp->prev=NULL;
-        (*arg_list)->prev=temp;
+        if(*arg_list!=NULL) (*arg_list)->prev=temp;
         *arg_list=temp;
         
         struct InterCodes* code2=translate_Args(Args->childlist[2],sym_table,arg_list);
@@ -1150,7 +1434,8 @@ struct InterCodes* translate_ExtDefList(struct TreeNode* ExtDefList)
         struct InterCodes* code1=translate_ExtDef(ExtDefList->childlist[0]);
         
         struct InterCodes* code2=translate_ExtDefList(ExtDefList->childlist[1]);
-        connect_ic(code1,code2);
+        if(code1!=NULL) connect_ic(code1,code2);
+        else code1=code2;
         return code1;
     }
     else
@@ -1170,10 +1455,12 @@ struct InterCodes* translate_ExtDef(struct TreeNode* ExtDef)
     if(strcmp(ExtDef->childlist[1]->name,"ExtDecList")==0)//ExtDef → Specifier ExtDecList SEMI
     {
         //printf("ExtDef → Specifier ExtDecList SEMI\n");
+        return NULL;
     }
     else if(strcmp(ExtDef->childlist[1]->name,"SEMI")==0)//Specifier SEMI
     {
         //printf("ExtDef → Specifier SEMI\n");
+        return NULL;
     }
     else if(strcmp(ExtDef->childlist[2]->name,"CompSt")==0)//Specifier FunDec CompSt
     {
@@ -1262,4 +1549,209 @@ struct InterCodes* translate_ParamDec(struct TreeNode* ParamDec)
     code->code.u.param.x->u.var_name=name;
 
     return code;
+}
+
+struct InterCodes* translate_DefList(struct TreeNode* DefList)
+{
+    //DefList → Def DefList | e
+    #ifdef _DEBUG
+        printf("translate_DefList!\n");
+    #endif
+    if(DefList->childnum>1)
+    {
+        struct InterCodes* code1=translate_Def(DefList->childlist[0]);
+        struct InterCodes* code2=translate_DefList(DefList->childlist[1]);
+        if(code1!=NULL) connect_ic(code1,code2);
+        else code1=code2;
+        return code1;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+struct InterCodes* translate_Def(struct TreeNode* Def)
+{
+    #ifdef _DEBUG
+        printf("translate_Def!\n");
+    #endif
+    //Def → Specifier DecList SEMI
+    return translate_DecList(Def->childlist[1]);
+}
+
+struct InterCodes* translate_DecList(struct TreeNode* DecList)
+{
+    //DecList → Dec | Dec COMMA DecList
+    #ifdef _DEBUG
+        printf("translate_DecList!\n");
+    #endif
+    if(DecList->childnum==1)
+    {
+        struct InterCodes* code1=translate_Dec(DecList->childlist[0]);
+        return code1;
+    }
+    else
+    {
+        struct InterCodes* code1=translate_Dec(DecList->childlist[0]);
+        struct InterCodes* code2=translate_DecList(DecList->childlist[2]);
+        if(code1!=NULL) connect_ic(code1,code2);
+        else code1=code2;
+        return code1;
+    }
+}
+
+struct InterCodes* translate_Dec(struct TreeNode* Dec)
+{
+    //Dec → VarDec | VarDec ASSIGNOP Exp
+    #ifdef _DEBUG
+        printf("translate_Dec!\n");
+    #endif
+    if(Dec->childnum==1)
+    {
+        struct InterCodes* code1=translate_VarDec(Dec->childlist[0],NULL);
+        return code1;
+    }
+    else
+    {
+        Operand t1=new_temp();
+        struct InterCodes* code1=translate_VarDec(Dec->childlist[0],t1);
+        Operand t2=new_temp();
+        struct InterCodes* code2=translate_Exp(Dec->childlist[2],&ST,t2);
+
+        struct InterCodes* code3=new_code();
+        code3->code.kind=IC_ASSIGN;
+        code3->code.u.assign.left=t1;
+        code3->code.u.assign.right=t2;
+
+        if(code1==NULL) code1=code2;
+        else connect_ic(code1,code2);
+
+        connect_ic(code2,code3);
+
+        return code1;
+    }
+}
+
+struct InterCodes* translate_VarDec(struct TreeNode* VarDec,Operand place)
+{
+    //VarDec → ID | VarDec LB INT RB
+    #ifdef _DEBUG
+        printf("translate_VarDec!\n");
+    #endif
+
+    if(place==NULL)
+    {
+        if(VarDec->childnum==1)
+        {
+            char* id=VarDec->childlist[0]->extra;
+            struct Symbol* s = SymbolFind(&ST,id);
+            if(s->type->kind==BASIC)
+                return NULL;
+            else if(s->type->kind==STRUCTURE)
+            {
+                char* id=VarDec->childlist[0]->extra;
+                struct Symbol* s = SymbolFind(&ST,id);
+
+                struct InterCodes* code=new_code();
+                code->code.kind=IC_DEC;
+                code->code.u.dec.x=new_temp();
+                code->code.u.dec.size=szof(s->type);
+
+                Operand temp2=new_temp();
+                temp2->u.var_name=id;
+                struct InterCodes* code1=new_code();
+                code1->code.kind=IC_ADDR;
+                code1->code.u.addr.left=temp2;
+                code1->code.u.addr.right=code->code.u.dec.x;
+
+                connect_ic(code,code1);
+                return code;
+            }
+            else
+            {
+                printf("ERROR: type error in translate_VarDec\n");
+                return NULL;
+            }
+
+        }
+        else
+        {
+            while(VarDec->childnum!=1)
+            {
+                VarDec=VarDec->childlist[0];
+            }
+            char* id=VarDec->childlist[0]->extra;
+            struct Symbol* s = SymbolFind(&ST,id);
+            
+            struct InterCodes* code=new_code();
+            code->code.kind=IC_DEC;
+            Operand t1=new_temp();
+            code->code.u.dec.x=t1;
+            code->code.u.dec.size=szof(s->type);
+
+            Operand t2=new_temp();
+            t2->u.var_name=id;
+            struct InterCodes* code1=new_code();
+            code1->code.kind=IC_ADDR;
+            code1->code.u.addr.left=t2;
+            code1->code.u.addr.right=t1;
+
+            connect_ic(code,code1);
+            return code;
+        }
+    }
+    else
+    {
+        if(VarDec->childnum==1)
+        {
+            char* id=VarDec->childlist[0]->extra;
+            
+            struct Symbol* s = SymbolFind(&ST,id);
+            if(s->type->kind==BASIC)
+            {
+                place->u.var_name=id;
+                //printf("%s\n",place->u.var_name);
+                return NULL;
+            }    
+            else if(s->type->kind==ARRAY || s->type->kind==STRUCTURE)
+            {
+                printf("ERROR: type error in translate_VarDec\n");
+                return NULL;
+            }
+        }
+        else
+        {
+            printf("ERROR: type error in translate_VarDec\n");
+            return NULL;
+        }
+    }
+}
+
+int szof(Type t)
+{
+    if(t->kind==BASIC)
+    {
+        return 4;
+    }
+    else if(t->kind==ARRAY)
+    {
+        return t->u.array.size*szof(t->u.array.elem);
+    }
+    else if(t->kind==STRUCTURE)
+    {
+        FieldList FL=t->u.structure;
+        int size=0;
+        while(FL!=NULL)
+        {
+            size+=szof(FL->type);
+            FL=FL->tail;
+        }
+        return size;
+    }
+    else
+    {
+        printf("error szof type\n");
+        return 0;
+    }
 }

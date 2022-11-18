@@ -65,6 +65,7 @@ Operand new_lable();
 Operand get_relop();
 struct InterCodes* new_code();
 Operand new_constant(int value);
+int szof(Type t);
 
 void connect_ic(struct InterCodes* code1,struct InterCodes* code2);
 void write_OP(Operand op,FILE* f);
@@ -84,4 +85,9 @@ struct InterCodes* translate_ExtDef(struct TreeNode* ExtDef);
 struct InterCodes* translate_FunDec(struct TreeNode* FunDec);
 struct InterCodes* translate_VarList(struct TreeNode* VarList);
 struct InterCodes* translate_ParamDec(struct TreeNode* ParamDec);
+struct InterCodes* translate_DefList(struct TreeNode* DefList);
+struct InterCodes* translate_Def(struct TreeNode* Def);
+struct InterCodes* translate_DecList(struct TreeNode* DecList);
+struct InterCodes* translate_Dec(struct TreeNode* Dec);
+struct InterCodes* translate_VarDec(struct TreeNode* VarDec,Operand place);
 #endif

@@ -9,6 +9,7 @@
 #include <string.h>
 #include "TreeNode.h"
 #include "debug.h"
+
 #define TABLESIZE 0x3fff
 #define STACKSIZE 0x1000
 
@@ -37,7 +38,9 @@ struct Type_
 
 		//name of struct difinition
 		Type structname_type;
+
 	} u;
+	Type upper;//
 };
 
 int FL_equal(FieldList a,FieldList b);//1-true-equal 0-unequal
@@ -46,6 +49,7 @@ int Type_equal(Type a,Type b);//1-true-equal 0-unequal
 struct FieldList_
 {
 	char* name; // 域的名字
+	int offset;
 	Type type; // 域的类型
 	FieldList tail; // 下一个域
 };
@@ -73,6 +77,9 @@ struct SymbolTable
 	
 // }
 
+extern int szof(Type t);
+
+FieldList Find_ID_Struct(struct SymbolTable* ST,char* name);
 struct Symbol* SymbolFind(struct SymbolTable* ST,char* name);
 void SymbolInsert(struct SymbolTable* ST,struct Symbol* s);
 void DeleteCurdepth(struct SymbolTable* ST);

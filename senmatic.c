@@ -79,6 +79,8 @@ void DeleteCurdepth(struct SymbolTable* ST)
 {
     //printf("DeleteCurdepth:%d\n",ST->curdepth);
     //PrintST(ST);
+
+    #ifndef _EXP3
 	if(ST->curdepth>0)
 	{
 		struct Symbol* cur=ST->Stack[ST->curdepth],*next;
@@ -97,6 +99,7 @@ void DeleteCurdepth(struct SymbolTable* ST)
 	{
 		printf("DELETE ERROR\n");
 	}
+    #endif
 }
 
 void PrintST(struct SymbolTable* ST)
@@ -152,6 +155,10 @@ struct Symbol* SymbolFind(struct SymbolTable* ST,char* name)
 	{
 		temp=temp->hash_next;
 	}
+    if(temp==NULL)
+    {
+        printf("ERROR:DO NOT FIND %s in SymbolTable\n",name);
+    }
 	return temp;
 }
 
@@ -1088,12 +1095,16 @@ Type expp(struct TreeNode* root)
             fprintf(stderr, "Error type 10 at Line %d:%s\n",root->childlist[0]->line,"not an array");
             return NULL;
         }
-        if(t2->kind!=BASIC || (t2->kind==BASIC && t2->u.basic!=INTT))
+        if((t2->kind==BASIC && t2->u.basic==INTT) || (t2->kind==FUNCTION && t2->u.function.ret_type->kind==BASIC && t2->u.function.ret_type->u.basic==INTT))
+        {
+            return t1->u.array.elem;
+        }
+        else
         {
             fprintf(stderr, "Error type 12 at Line %d:%s\n",root->childlist[2]->line,"not an integer");
             return NULL;
         }
-        return t1->u.array.elem;
+        
     }
     else if(strcmp(root->childlist[0]->name,"Exp")==0 && strcmp(root->childlist[1]->name,"DOT")==0)//Exp DOT ID
     {
@@ -1215,4 +1226,40 @@ void check_only_declared_func(struct SymbolTable* ST)
             //printf("\n");
         }
     }
+}
+
+FieldList Find_ID_Struct(struct SymbolTable* ST,char* name)
+{
+    //PrintST(ST);
+    for(int i=0;i<TABLESIZE;i++)
+    {
+        struct Symbol* cur=ST->HashTable[i];
+        while(cur!=NULL)
+        {
+            if(cur->type->kind==STRUCTURE || cur->type->kind==STRUCTNAME)
+            {
+                int offset=0;
+                FieldList FL;
+                if(cur->type->kind==STRUCTURE)
+                    FL=cur->type->u.structure;
+                else
+                    FL=cur->type->u.structname_type->u.structure;
+                while(FL!=NULL && strcmp(name,FL->name)!=0)
+                {
+                    FL->offset=offset;
+                    offset+=szof(FL->type);
+                    FL=FL->tail;
+                }
+                if(FL!=NULL)
+                {
+                    printf("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC FIND offset:%d %s!\n",offset,name);
+                    FL->offset=offset;
+                    return FL;
+                }
+            }
+            cur=cur->hash_next;
+        }
+    }
+    printf("AAAAAAAAAAAAAAAAAAAA DO NOT FIND!\n");
+    return NULL;
 }
