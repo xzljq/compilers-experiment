@@ -4,6 +4,7 @@
 #include "TreeNode.h"
 #include "ir.h"
 #include "debug.h"
+#include "mips32.h"
 
 
 extern struct TreeNode* root;
