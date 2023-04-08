@@ -9,6 +9,8 @@
 #include "TreeNode.h"
 #include "debug.h"
 
+
+
 typedef struct Operand_* Operand;
 struct Operand_ {
     enum { VARIABLE, CONSTANT, ADDRESS, LABLE, REL, FUNC} kind;
@@ -19,13 +21,26 @@ struct Operand_ {
         char* relop;
         char* func_name;
     } u;
+    int reg;
+};
+
+typedef struct OpList_* OpList;
+struct OpList_
+{
+    Operand op;
+    struct OpList_* next;
 };
 
 struct InterCode
 {
+    int BasicBlock;//
+
+    int InternalNo;
+
     enum { IC_ASSIGN, IC_ADD, IC_SUB, IC_MUL, IC_DIV, IC_LABLE, IC_FUNC,
             IC_RETURN, IC_GOTO, IC_IFGOTO, IC_READ, IC_WRITE, IC_CALL, IC_ARG, 
             IC_DEC, IC_PARAM, IC_ADDR, IC_R_DEREF, IC_L_DEREF} kind;
+
     union {
         struct { Operand right, left; } assign;
         struct { Operand result, op1, op2; } binop;
@@ -57,8 +72,9 @@ struct operandlist
     Operand op;
     struct operandlist *prev,*next;
 };
+void ProcessIR(struct InterCodes* head);
 void writeToFile(struct InterCodes* head,FILE* f);
-
+void Print_IR(struct InterCodes* head);
 
 Operand new_temp();
 Operand new_lable();

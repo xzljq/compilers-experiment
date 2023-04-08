@@ -7,11 +7,57 @@ struct InterCodes* IC_head = NULL;
 int temp_count=0;
 int lable_count=0;
 
-void writeToFile(struct InterCodes* head,FILE* f)
+void DeleteIR(struct InterCodes* head)
+{
+    if(head!=NULL)
+    {
+        if(head->prev==NULL && head->next==NULL)
+        {
+            printf("DELETE IR head\n");
+            exit(0);
+            head->prev->next=NULL;
+        }
+        else if(head->prev!=NULL && head->next==NULL)
+        {
+            head->prev->next=NULL;
+        }
+        else if(head->prev==NULL && head->next!=NULL)
+        {
+            printf("DELETE IR head\n");
+            exit(0);
+        }
+        else
+        {
+            head->prev->next=head->next;
+        }
+    }
+}
+
+void ProcessIR(struct InterCodes* head)
+{
+    while(head!=NULL)
+    {
+        if(head->code.kind==IC_ASSIGN)
+        {
+            if(head->code.u.assign.left==NULL)
+            {
+                DeleteIR(head);
+                head=head->next;
+                continue;
+            }
+        }
+        head=head->next;
+    }
+}
+
+void Print_IR(struct InterCodes* head)
 {
     while(head!=NULL)
     {
         //printf("%d\n",head->code.kind);
+        #ifdef _DEBUG
+        printf("%d %d\t",head->code.BasicBlock,head->code.InternalNo);
+        #endif
         if(head->code.kind==IC_ASSIGN)
         {
             if(head->code.u.assign.left==NULL)
@@ -20,6 +66,190 @@ void writeToFile(struct InterCodes* head,FILE* f)
                 printf("left is NULL\n");
                 #endif
                 head=head->next;
+                exit(0);
+                continue;
+            }
+            #ifdef _DEBUG
+            print_OP(head->code.u.assign.left);
+            printf(" := ");
+            print_OP(head->code.u.assign.right);
+            #endif
+        }
+        else if(head->code.kind==IC_ADD)
+        {
+            #ifdef _DEBUG
+            
+            print_OP(head->code.u.binop.result);
+		    printf(" := ");
+			print_OP(head->code.u.binop.op1);
+			printf(" + ");
+			print_OP(head->code.u.binop.op2);
+            #endif
+        }
+        else if(head->code.kind==IC_SUB)
+        {
+            print_OP(head->code.u.binop.result);
+		    printf(" := ");
+			print_OP(head->code.u.binop.op1);
+			printf(" - ");
+			print_OP(head->code.u.binop.op2);
+        }
+        else if(head->code.kind==IC_MUL)
+        {
+            print_OP(head->code.u.binop.result);
+		    printf(" := ");
+			print_OP(head->code.u.binop.op1);
+			printf(" * ");
+			print_OP(head->code.u.binop.op2);
+        }
+        else if(head->code.kind==IC_DIV)
+        {
+            print_OP(head->code.u.binop.result);
+		    printf(" := ");
+			print_OP(head->code.u.binop.op1);
+			printf(" / ");
+			print_OP(head->code.u.binop.op2);
+        }
+        else if(head->code.kind==IC_LABLE)
+        {
+            printf("LABEL ");
+			print_OP(head->code.u.lable.op_lable);
+            printf(" :");
+        }
+        else if(head->code.kind==IC_FUNC)
+        {
+            printf("FUNCTION ");
+			print_OP(head->code.u.func.op_func);
+            printf(" :");
+        }
+        else if(head->code.kind==IC_RETURN)
+        {
+            printf("RETURN ");
+			print_OP(head->code.u.ret.op_return);
+        }
+        else if(head->code.kind==IC_GOTO)
+        {
+            printf("GOTO ");
+			print_OP(head->code.u.gt.op_goto);
+        }
+        else if(head->code.kind==IC_IFGOTO)
+        {
+            printf("IF ");
+			print_OP(head->code.u.ifgt.x);
+            printf(" ");
+            print_OP(head->code.u.ifgt.relop);
+            printf(" ");
+            print_OP(head->code.u.ifgt.y);
+            printf(" GOTO ");
+            print_OP(head->code.u.ifgt.z);
+        }
+        else if(head->code.kind==IC_READ)
+        {
+            if(head->code.u.read.op_read==NULL)
+            {
+                head->code.u.read.op_read=new_temp();
+            }
+            #ifdef _DEBUG
+            printf("READ ");
+			print_OP(head->code.u.read.op_read);
+            #endif
+
+        }
+        else if(head->code.kind==IC_WRITE)
+        {
+            #ifdef _DEBUG
+            printf("WRITE ");
+			print_OP(head->code.u.write.op_write);
+            #endif
+
+        }
+        else if(head->code.kind==IC_CALL)
+        {
+            if(head->code.u.call.x==NULL)
+            {
+                #ifdef _DEBUG
+                printf("ADD A USELESS FUNC RET\n");
+                #endif
+                head->code.u.call.x=new_temp();
+            }
+            #ifdef _DEBUG
+            print_OP(head->code.u.call.x);
+            printf(" := CALL ");
+			print_OP(head->code.u.call.f);
+            #endif
+
+        }
+        else if(head->code.kind==IC_ARG)
+        {
+            #ifdef _DEBUG
+            printf("ARG ");
+			print_OP(head->code.u.arg.x);
+            #endif
+        }
+        else if(head->code.kind==IC_DEC)
+        {
+            #ifdef _DEBUG
+            printf("DEC ");
+			print_OP(head->code.u.dec.x);
+            printf(" [%d]",head->code.u.dec.size);
+            #endif
+        }
+        else if(head->code.kind==IC_PARAM)
+        {
+            #ifdef _DEBUG
+            printf("PARAM ");
+			print_OP(head->code.u.param.x);
+            #endif
+        }
+        else if(head->code.kind==IC_ADDR)
+        {
+            #ifdef _DEBUG
+            print_OP(head->code.u.addr.left);
+            printf(" := &");
+            print_OP(head->code.u.addr.right);
+            #endif
+        }
+        else if(head->code.kind==IC_R_DEREF)
+        {
+            #ifdef _DEBUG
+            print_OP(head->code.u.r_deref.left);
+            printf(" := *");
+            print_OP(head->code.u.r_deref.right);
+            #endif
+        }
+        else if(head->code.kind==IC_L_DEREF)
+        {
+            printf("*");
+            print_OP(head->code.u.l_deref.left);
+            printf(" := ");
+            print_OP(head->code.u.l_deref.right);
+        }
+        else
+        {
+            printf("IC PRINT ERROR!\n");
+        }
+        printf("\n");
+        head=head->next;
+    }
+}
+
+void writeToFile(struct InterCodes* head,FILE* f)
+{
+    while(head!=NULL)
+    {
+        //printf("%d\n",head->code.kind);
+        #ifdef _DEBUG
+        printf("%d\t",head->code.BasicBlock);
+        #endif
+        if(head->code.kind==IC_ASSIGN)
+        {
+            if(head->code.u.assign.left==NULL)
+            {
+                #ifdef _DEBUG
+                printf("left is NULL\n");
+                #endif
+                head=head->next;
+                exit(0);
                 continue;
             }
             #ifdef _DEBUG
@@ -35,6 +265,7 @@ void writeToFile(struct InterCodes* head,FILE* f)
         else if(head->code.kind==IC_ADD)
         {
             #ifdef _DEBUG
+            
             print_OP(head->code.u.binop.result);
 		    printf(" := ");
 			print_OP(head->code.u.binop.op1);

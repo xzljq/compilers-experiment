@@ -1,52 +1,24 @@
-struct S1{
-  int a;
-  int b;
-};
-
-struct S2{
-  int c;
-  struct S1 arr[2];
-};
-
-int func1(struct S1 p1, struct S1 p2) {
-  int a1 = p1.a * p2.a;
-  int b1 = p1.b * p2.b;
-  return a1 + b1;
-}
-
-int func2(int p) {
-  int idx = 0;
-  while (idx <= p) {
-    int i = idx * idx;
-    int j = (idx + 1) * (idx + 1);
-    if ((p >= i) && (p < j)) {
-      return idx;
-    }
-    idx = idx + 1;
-  }
-  return -1;
-}
-
-int func3(struct S1 pp1, struct S1 pp2) {
-  int t1 = func1(pp1, pp2);
-  return func2(t1);
-}
-
 int main() {
-  int arr_len = 2;
-  struct S2 arrS[2];
-  int idx1 = 0;
-  int idx2 = 0;
-  while (idx1 < 2) {
-    idx2 = 0;
-    while (idx2 < 2) {
-      arrS[idx1].arr[idx2].a = idx1 * idx2 + idx2;
-      arrS[idx1].arr[idx2].b = idx1 * idx1 * idx2 + idx2;
-      idx2 = idx2 + 1;
-    }
-    arrS[idx1].c = func3(arrS[idx1].arr[0], arrS[idx1].arr[1]);
-    idx1 = idx1 + 1;
-  }
-  write(arrS[0].c + arrS[1].c);
+  int i0 = 14;
+  int i1 = i0 * 20 + 8;
+  int i2 = i0 + i1 * i0 - 100;
+  int i3 = i0 * 1 + i1 * 2 + i2 * 3 + i0 * i1 / i2;
+  int i4 = i0 + i1 / (i1 + i2 - i3) * i3 * (1 + i2 / 2);
+  int i5 = 90;
+  int i6 = i5 * i0;
+  int i7 = i6 + 19;
+  int i8 = i7 - 50;
+  int i9 = i8 + i8;
+  int i10 = i9;
+
+  write(i1);
+  write(i3);
+  write(i5);
+  write(i7);
+
+  i10 = i1 + i9 * i10 - i8 * (i7 - i6) / (i5 + i4) + i3 * i2;
+  i0 = i10 + i9 + i8 + i7;
+  write(i0);
+
   return 0;
 }
